@@ -884,10 +884,40 @@ static struct platform_driver gf_driver = {
 	.probe = gf_probe,
 	.remove = gf_remove,
 };
-
+static struct of_device_id fp_id_match_table[] = {
+	{ .compatible = "fp_id,fp_id",},
+	{},
+};
+MODULE_DEVICE_TABLE(of, fp_id_match_table);
 static int __init gf_init(void)
 {
 	int status;
+	struct device_node *fp_id_np = NULL;
+	int fp_id_gpio = 0, fp_id_gpio_value = 0, fp_id_pwr = 0;
+
+	fp_id_np = of_find_matching_node(fp_id_np, fp_id_match_table);
+	if (fp_id_np) {
+		fp_id_gpio = of_get_named_gpio(fp_id_np, "silead,gpio_fp_id", 0);
+             fp_id_pwr = of_get_named_gpio(fp_id_np, "silead,gpio_pwr_id", 0);
+		printk("%s: fp_id_gpio=%d\n",__func__, fp_id_gpio);
+	}
+
+	if (fp_id_gpio < 0 || fp_id_pwr < 0) {
+		printk("of_get_gpio   fail\n");
+		return status;
+	}
+	gpio_direction_output(fp_id_pwr,1);
+	mdelay(5);
+	gpio_direction_input(fp_id_gpio);
+	fp_id_gpio_value = gpio_get_value(fp_id_gpio);
+	printk("%s: fp_id_gpio_value=%d\n",__func__, fp_id_gpio_value);
+	if(fp_id_gpio_value == 1){
+		printk("%s:  need to load goodix driver \n",__func__);
+	}
+	else{
+
+		return status;
+	}
 
 	/* Claim our 256 reserved device numbers.  Then register a class
 	 * that will key udev/mdev to add/remove /dev nodes.  Last, register
